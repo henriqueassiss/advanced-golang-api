@@ -1,0 +1,60 @@
+services:
+  air:
+    container_name: 'markehub_air'
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      db_migrate:
+        condition: service_completed_successfully
+      cache:
+        condition: service_started
+    ports:
+      - '${API_PORT}:${API_PORT}'
+    volumes:
+      - ./:/app
+
+  db:
+    container_name: 'markehub_db'
+    image: postgres:16.2-alpine
+    restart: always
+    healthcheck:
+      test: pg_isready -d ${DB_NAME} -U ${DB_USER}
+      interval: 5s
+      timeout: 20s
+      retries: 120
+    environment:
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}
+    ports:
+      - '${DB_PORT}:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  db_migrate:
+    container_name: 'markehub_db_migrate'
+    image: migrate/migrate
+    depends_on:
+      db:
+        condition: service_healthy
+    command:
+      [
+        '-path',
+        '/migrations',
+        '-database',
+        'postgres://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}?sslmode=${DB_SSL_MODE}',
+        'up',
+      ]
+    volumes:
+      - ./migrations:/migrations
+
+  cache:
+    container_name: 'markehub_cache'
+    image: redis:7.2-alpine
+    restart: always
+    ports:
+      - '${CACHE_PORT}:6379'
+
+volumes:
+  pgdata:
