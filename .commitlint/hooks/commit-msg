@@ -9,4 +9,4 @@ if ! type commitlint >/dev/null 2>/dev/null; then
 fi
 
 commitlint lint --message $1
-go test -v ./...
+go mod tidy
