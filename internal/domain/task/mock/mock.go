@@ -45,11 +45,9 @@ func Mock(db *sqlx.DB) error {
 		ts = append(ts, t)
 	}
 
-	_, err = db.NamedExec(`INSERT INTO tasks (id,
-	title,
+	_, err = db.NamedExec(`INSERT INTO tasks (title,
 	description)
-	VALUES (:id,
-	:title,
+	VALUES (:title,
 	:description)`, ts)
 
 	return err
